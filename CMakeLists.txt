@@ -6,10 +6,31 @@ find_package(OpenCV REQUIRED)
 
 option(WITH_REALSENSE2 "Use RealSense2 SDK" ON)
 if(WITH_REALSENSE2)
-    find_package(realsense2 REQUIRED)
+    find_package(realsense2 QUIET CONFIG)
+
+    if(NOT realsense2_FOUND)
+        message(STATUS "librealsense2 not found — fetching and building from source")
+        include(FetchContent)
+
+        # Declare librealsense
+        FetchContent_Declare(
+            librealsense
+            GIT_REPOSITORY https://github.com/realsenseai/librealsense.git
+            GIT_TAG v2.57.4
+        )
+
+        set(BUILD_EXAMPLES OFF CACHE BOOL "Disable building examples")
+        set(BUILD_GRAPHICAL_EXAMPLES OFF CACHE BOOL "Disable graphical examples")
+        set(BUILD_WITH_CUDA OFF CACHE BOOL "Disable CUDA support")
+        set(BUILD_WITH_OPENMP OFF CACHE BOOL "Disable OpenMP support")
+        set(BUILD_UNIT_TESTS OFF CACHE BOOL "Disable unit tests")
+        set(INSTALL_CPP_EXAMPLES OFF CACHE BOOL "Do not install C++ examples")
+
+        FetchContent_MakeAvailable(librealsense)
+    endif()
 endif()
 
-option(WITH_FFMPEG "Include FFMPEG decoder" ON)
+option(WITH_FFMPEG "Include FFMPEG decoder" OFF)
 if(WITH_FFMPEG)
     find_path(AVCODEC_INCLUDE_DIR libavcodec/avcodec.h REQUIRED)
     find_library(AVCODEC_LIBRARY avcodec REQUIRED)
@@ -25,29 +46,19 @@ endif()
 
 # Collect source files
 set(DEVICE_FACTORY_SOURCES
-    Device.cpp
-    DeviceFactory.cpp
-    CameraCalibration.cpp
-    CVVideoCaptureDevice.cpp
-    CVImageCaptureDevice.cpp
-)
-
-set(DEVICE_FACTORY_HEADERS
-    Device.h
-    DeviceFactory.h
-    CameraCalibration.h
-    CVVideoCaptureDevice.h
-    CVImageCaptureDevice.h
+    src/Device.cpp
+    src/DeviceFactory.cpp
+    src/CameraCalibration.cpp
+    src/CVVideoCaptureDevice.cpp
+    src/CVImageCaptureDevice.cpp
 )
 
 if(WITH_REALSENSE2)
-    list(APPEND DEVICE_FACTORY_SOURCES RealSense2Device.cpp)
-    list(APPEND DEVICE_FACTORY_HEADERS RealSense2Device.h)
+    list(APPEND DEVICE_FACTORY_SOURCES src/RealSense2Device.cpp)
 endif()
 
 if(WITH_FFMPEG)
-    list(APPEND DEVICE_FACTORY_SOURCES FFMPEGDevice.cpp)
-    list(APPEND DEVICE_FACTORY_HEADERS FFMPEGDevice.h)
+    list(APPEND DEVICE_FACTORY_SOURCES src/FFMPEGDevice.cpp)
 endif()
 
 # Create shared library
@@ -56,7 +67,7 @@ add_library(DeviceFactory SHARED ${DEVICE_FACTORY_SOURCES} ${DEVICE_FACTORY_HEAD
 # Include directories
 target_include_directories(DeviceFactory
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/include
         $<INSTALL_INTERFACE:include/DeviceFactory>
         ${OpenCV_INCLUDE_DIRS}
 )
