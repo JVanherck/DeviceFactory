@@ -67,7 +67,7 @@ add_library(DeviceFactory SHARED ${DEVICE_FACTORY_SOURCES} ${DEVICE_FACTORY_HEAD
 # Include directories
 target_include_directories(DeviceFactory
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/include
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/include/DeviceFactory
         $<INSTALL_INTERFACE:include/DeviceFactory>
         ${OpenCV_INCLUDE_DIRS}
 )
@@ -110,6 +110,8 @@ include(GNUInstallDirs)
 
 set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_PREFIX}/include)
 
+
+file(GLOB DEVICE_FACTORY_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/DeviceFactory/*.h")
 install(FILES ${DEVICE_FACTORY_HEADERS}
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/DeviceFactory
 )
