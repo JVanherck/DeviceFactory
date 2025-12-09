@@ -88,7 +88,7 @@ target_link_libraries(DeviceFactory
 )
 
 if(WITH_REALSENSE2)
-    target_link_libraries(DeviceFactory PUBLIC realsense2::realsense2)
+    target_link_libraries(DeviceFactory PUBLIC realsense2)
 endif()
 
 if(WITH_FFMPEG)
