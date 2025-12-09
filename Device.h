@@ -83,6 +83,8 @@ protected:
     std::string m_deviceID;
     DeviceProperties m_initProperties;
     std::string m_initCalibrationFile;
+
+    std::deque<double> timestamps;
 };
 
 typedef std::shared_ptr<Device> DevicePtr;

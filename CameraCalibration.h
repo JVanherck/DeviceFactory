@@ -3,6 +3,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <glm/glm.hpp>
 
 class CameraCalibration
 {
@@ -11,7 +12,6 @@ public:
 
     void setIntrinsicsMatrix(cv::Matx33d K);
     void setDistortionParameters(const std::vector<double>& newDists);
-
 
     cv::Matx33d getIntrinsicsMatrix() const;
     double getFocalLengthX() const;

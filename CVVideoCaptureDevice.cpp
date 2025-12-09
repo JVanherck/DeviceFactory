@@ -1,4 +1,6 @@
 #include "CVVideoCaptureDevice.h"
+#include <filesystem>
+#include <fstream>
 
 namespace DeviceFactory{
 
@@ -18,6 +20,12 @@ void CVVideoCaptureDevice::captureImages(cv::Mat &color, double &timestamp)
         auto m_current = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(m_current - m_startTime);
         timestamp = duration.count()/1000.0;
+    }
+
+    if(!timestamps.empty())
+    {
+        timestamp = timestamps.front();
+        timestamps.pop_front();
     }
 }
 
@@ -73,6 +81,12 @@ void CVVideoCaptureDevice::captureImages(cv::Mat &color, cv::Mat &depth, double 
     auto m_current = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(m_current - m_startTime);
     timestamp = duration.count()/1000.0;
+
+    if(!timestamps.empty())
+    {
+        timestamp = timestamps.front();
+        timestamps.pop_front();
+    }
 }
 
 std::vector<std::string> CVVideoCaptureDevice::split(const std::string &s, char delim)
@@ -195,6 +209,21 @@ bool CVVideoCaptureDevice::init(const std::string ID, const DeviceProperties &pr
         else // No type defined: open as RGB
         {
             isOpen = openCamera(m_videoCaptureColor, path);
+            std::filesystem::path fsPath {path};
+            auto tsPath = fsPath.parent_path() / (fsPath.stem().string() + "_timestamps.txt");
+
+            if(std::filesystem::exists(tsPath))
+            {
+                std::ifstream file(tsPath);
+                if (!file.is_open()) {
+                    std::cerr << "Failed to open " << tsPath << "\n";
+                }
+
+                double val;
+                while (file >> val) {  // reads line by line, or whitespace-separated
+                    timestamps.push_back(val);
+                }
+            }
         }
 
         if (!isOpen)

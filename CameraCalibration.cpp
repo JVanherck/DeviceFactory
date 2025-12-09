@@ -108,33 +108,36 @@ bool CameraCalibration::loadCalibration(const std::string& file)
             int cameraId;
             std::string model;
             float fx, fy, cx, cy;
-            float k1, k2, p1, p2;
+            float k1, k2, p1, p2, k3;
 
             iss >> cameraId >> model >> m_width >> m_height;
-            if (model != "OPENCV")
+            if (model != "OPENCV" && model != "OPENCV_FISHEYE")
             {
                 std::cerr << "Unsupported camera model: " << model << std::endl;
                 return false;
             }
 
-            iss >> fx >> fy >> cx >> cy >> k1 >> k2 >> p1 >> p2;
+            iss >> fx >> fy >> cx >> cy;
 
-            // Fill intrinsics
             m_K = cv::Matx33f::eye();
             m_K(0, 0) = fx;
             m_K(1, 1) = fy;
             m_K(0, 2) = cx;
             m_K(1, 2) = cy;
 
-            // Fill distortion coefficients
-            m_dists.resize(5, 0.0f);
-            m_dists[0] = k1;
-            m_dists[1] = k2;
-            m_dists[2] = p1;
-            m_dists[3] = p2;
-            m_dists[4] = 0.0f;
-
-            m_fishEye = false;
+            if (model == "OPENCV_FISHEYE")
+            {
+                float k1f, k2f, k3f, k4f;
+                iss >> k1f >> k2f >> k3f >> k4f;
+                m_dists = {k1f, k2f, k3f, k4f};
+                m_fishEye = true;
+            }
+            else
+            {
+                iss >> k1 >> k2 >> p1 >> p2 >> k3;
+                m_dists = {k1, k2, p1, p2, k3};
+                m_fishEye = false;
+            }
 
             return true;
         }
@@ -153,18 +156,48 @@ bool CameraCalibration::loadCalibration(const std::string& file)
 
     ifs >> m_width;
     ifs >> m_height;
+
     for (int r = 0; r < 3; ++r)
         for (int c = 0; c < 3; ++c)
             ifs >> m_K(r, c);
 
-    m_dists.resize(5);
-    for (int d = 0; d < 5; ++d)
-        ifs >> m_dists[d];
+    // Skip leftover newline after reading numbers
+    ifs.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    std::string distLine;
+    std::getline(ifs, distLine);
+
+    std::replace(distLine.begin(), distLine.end(), ',', ' ');
+    std::istringstream distStream(distLine);
+    std::vector<double> dists;
+    double val;
+    while (distStream >> val)
+        dists.push_back(val);
 
     ifs >> m_fishEye;
 
+    if (m_fishEye)
+    {
+        if (dists.size() != 4)
+        {
+            std::cerr << "Fisheye camera expects 4 distortion parameters, got " << dists.size() << std::endl;
+            return false;
+        }
+        m_dists = dists;
+    }
+    else
+    {
+        if (dists.size() != 5)
+        {
+            std::cerr << "Pinhole camera expects 5 distortion parameters, got " << dists.size() << std::endl;
+            return false;
+        }
+        m_dists = dists;
+    }
+
     return true;
 }
+
 
 bool CameraCalibration::loadCalibration(const double fx, const double fy, const double cx, const double cy, std::vector<double> dist, int width, int height)
 {

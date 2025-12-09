@@ -39,7 +39,7 @@ bool Device::isFisheye()
 
 CameraCalibration Device::getCalibration()
 {
-    return m_calibration.getScaledCalibration(getWidth(), getHeight());
+    return m_calibration;//.getScaledCalibration(getWidth(), getHeight());
 }
 
 void Device::reset()
