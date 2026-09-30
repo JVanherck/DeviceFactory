@@ -65,6 +65,7 @@ void CameraCalibration::saveCalibration(const std::string& file)
     if (ofs.is_open())
     {
         ofs << getWidth() << " " << getHeight() << std::endl;
+        ofs << std::fixed << std::setprecision(10);
         for (int r = 0; r < 3; ++r)
         {
             for (int c = 0; c < 3; ++c)
@@ -78,6 +79,7 @@ void CameraCalibration::saveCalibration(const std::string& file)
             ofs << m_dists[d] << " ";
         ofs << std::endl;
 
+        ofs << std::fixed << std::setprecision(0);
         ofs << m_fishEye << std::endl;
     }
     else
